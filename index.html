@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Upload PRO</title>
+
+<style>
+body {
+  background:#0b0b0b;
+  color:#fff;
+  font-family:Arial;
+  text-align:center;
+}
+
+.box {
+  background:#111;
+  padding:20px;
+  border-radius:10px;
+  width:320px;
+  margin:20px auto;
+}
+
+input, button {
+  padding:10px;
+  margin:5px;
+  border:none;
+  border-radius:5px;
+}
+
+button {
+  background:#222;
+  color:#fff;
+  cursor:pointer;
+}
+
+.card {
+  background:#1a1a1a;
+  margin:5px;
+  padding:10px;
+  border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h3>📤 Upload</h3>
+
+  <input type="file" id="file">
+  <button onclick="upload()">Upload</button>
+
+  <input id="link" placeholder="Link..." readonly>
+  <button onclick="copy()">📋 Copy</button>
+
+  <hr>
+
+  <p>API: /api/upload</p>
+  <button onclick="copyApi()">📋 Copy API</button>
+</div>
+
+<div class="box">
+  <h3>🔐 Admin Panel</h3>
+
+  <input type="password" id="pass" placeholder="Password">
+  <button onclick="loadFiles()">Load Files</button>
+
+  <div id="files"></div>
+</div>
+
+<script>
+
+// رفع
+async function upload(){
+  let file = document.getElementById('file').files[0]
+  if (!file) return alert("اختار ملف")
+
+  let form = new FormData()
+  form.append("file", file)
+
+  let r = await fetch('/api/upload', { method:'POST', body:form })
+  let d = await r.json()
+
+  if (d.status){
+    document.getElementById('link').value = d.url
+  }
+}
+
+// نسخ
+function copy(){
+  navigator.clipboard.writeText(document.getElementById('link').value)
+}
+
+// نسخ API
+function copyApi(){
+  navigator.clipboard.writeText(location.origin + "/api/upload")
+}
+
+// لوحة التحكم
+async function loadFiles(){
+  let pass = document.getElementById('pass').value
+
+  let r = await fetch('/api/files?password=' + pass)
+  let d = await r.json()
+
+  if (!d.status) return alert("Wrong password")
+
+  document.getElementById('files').innerHTML =
+    d.files.map(f => `
+      <div class="card">
+        ${f}
+        <br>
+        <a href="/${f}" target="_blank">فتح</a>
+        <button onclick="del('${f}')">حذف</button>
+      </div>
+    `).join('')
+}
+
+// حذف
+async function del(file){
+  let pass = document.getElementById('pass').value
+  await fetch(`/api/delete?file=${file}&password=${pass}`)
+  loadFiles()
+}
+
+</script>
+
+</body>
+</html>
