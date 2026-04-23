@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Upload PRO</title>
+
+<style>
+body {
+  background:#0b0b0b;
+  color:#fff;
+  font-family:Arial;
+  text-align:center;
+}
+
+.box {
+  background:#111;
+  padding:20px;
+  margin:15px auto;
+  width:320px;
+  border-radius:10px;
+}
+
+input, button {
+  padding:10px;
+  margin:5px;
+  border:none;
+  border-radius:5px;
+  width:90%;
+}
+
+button {
+  background:#222;
+  color:#fff;
+  cursor:pointer;
+}
+
+button:hover {
+  background:#333;
+}
+
+#status {
+  color:#0f0;
+  font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h3>🔐 تسجيل / دخول</h3>
+  <input id="user" placeholder="username">
+  <input id="pass" type="password" placeholder="password">
+
+  <button onclick="register()">Register</button>
+  <button onclick="login()">Login</button>
+
+  <p id="status">❌ مش مسجل</p>
+</div>
+
+<div class="box">
+  <h3>📤 Upload</h3>
+
+  <input type="file" id="file">
+  <button onclick="upload()">Upload</button>
+
+  <input id="link" readonly placeholder="link...">
+  <button onclick="copy()">📋 Copy Link</button>
+
+  <hr>
+
+  <button onclick="copyApi()">📋 Copy API</button>
+</div>
+
+<script>
+
+let TOKEN = localStorage.getItem("token")
+
+// تحديث الحالة
+function updateStatus(){
+  if (TOKEN){
+    document.getElementById("status").innerText = "✅ مسجل دخول"
+  } else {
+    document.getElementById("status").innerText = "❌ مش مسجل"
+  }
+}
+
+updateStatus()
+
+// تسجيل
+async function register(){
+  let r = await fetch('/api/register', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      username: user.value,
+      password: pass.value
+    })
+  })
+
+  let d = await r.json()
+
+  if (d.status){
+    alert("تم التسجيل 🔥")
+  } else {
+    alert("فشل التسجيل ❌")
+  }
+}
+
+// تسجيل دخول
+async function login(){
+  let r = await fetch('/api/login', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      username: user.value,
+      password: pass.value
+    })
+  })
+
+  let d = await r.json()
+
+  if (d.status){
+    localStorage.setItem("token", d.token)
+    TOKEN = d.token
+    updateStatus()
+    alert("تم الدخول 🔥")
+  } else {
+    alert("بيانات غلط ❌")
+  }
+}
+
+// رفع
+async function upload(){
+  if (!TOKEN) return alert("سجل دخول الأول ❌")
+
+  let file = document.getElementById('file').files[0]
+  if (!file) return alert("اختار ملف")
+
+  let form = new FormData()
+  form.append("file", file)
+
+  let r = await fetch('/api/upload', {
+    method:'POST',
+    headers:{ authorization: TOKEN },
+    body: form
+  })
+
+  let d = await r.json()
+
+  if (d.status){
+    document.getElementById('link').value = d.url
+  } else {
+    alert("فشل الرفع ❌")
+  }
+}
+
+// نسخ الرابط
+function copy(){
+  navigator.clipboard.writeText(link.value)
+  alert("تم النسخ 🔥")
+}
+
+// نسخ API
+function copyApi(){
+  navigator.clipboard.writeText(location.origin + "/api/upload")
+  alert("تم نسخ API 🔥")
+}
+
+</script>
+
+</body>
+</html>
